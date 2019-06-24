@@ -1,0 +1,25 @@
+plugins {
+    id 'org.springframework.boot' version '2.1.6.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+//    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '6.4.0', ext: 'pom'
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '6.4.0'
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.3'
+    compile group: 'org.springframework.data', name: 'spring-data-elasticsearch', version: '3.1.9.RELEASE'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
