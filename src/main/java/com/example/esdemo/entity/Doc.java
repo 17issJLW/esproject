@@ -49,6 +49,12 @@ public class Doc {
     @Field(type = FieldType.Keyword)
     private String url;
 
+    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+    private List<String> lawList;
+
+    @Field(type = FieldType.Keyword)
+    private List<String> stage;
+
     @Override
     public String toString() {
         return "Doc{" +
@@ -63,15 +69,9 @@ public class Doc {
                 ", litigant=" + litigant +
                 ", time=" + time +
                 ", url='" + url + '\'' +
+                ", lawList=" + lawList +
+                ", stage=" + stage +
                 '}';
-    }
-
-    public String getcaseNumber() {
-        return caseNumber;
-    }
-
-    public void setcaseNumber(String caseNumber) {
-        this.caseNumber = caseNumber;
     }
 
     public long getId() {
@@ -104,6 +104,14 @@ public class Doc {
 
     public void setCaseType(List<String> caseType) {
         this.caseType = caseType;
+    }
+
+    public String getCaseNumber() {
+        return caseNumber;
+    }
+
+    public void setCaseNumber(String caseNumber) {
+        this.caseNumber = caseNumber;
     }
 
     public String getDocType() {
@@ -152,5 +160,21 @@ public class Doc {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public List<String> getLawList() {
+        return lawList;
+    }
+
+    public void setLawList(List<String> lawList) {
+        this.lawList = lawList;
+    }
+
+    public List<String> getStage() {
+        return stage;
+    }
+
+    public void setStage(List<String> stage) {
+        this.stage = stage;
     }
 }
