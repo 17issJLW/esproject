@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.AbstractTransactionalJUnit4Spring
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -56,13 +57,17 @@ public class EsdemoApplicationTests {
     @Test
     public void testAdd() throws Exception{
         Doc doc = new Doc();
-        doc.setId(1);
         doc.setCaseName("赵龙抢劫死刑复核刑事裁定书");
-        doc.setCaseType("刑事");
+        List<String> typeList = new ArrayList<>();
+        typeList.add("刑事");
+        typeList.add("裁定");
+        doc.setCaseType(typeList);
         doc.setCourt("最高人民法院");
         doc.setDocType("刑事裁定书");
-        doc.setLawyer("李彤");
-        doc.setLitigant("赵龙");
+        List<String> litigantList = new ArrayList<>();
+        litigantList.add("樊明");
+        litigantList.add("刘希龙");
+        doc.setLitigant(litigantList);
         doc.setContent("被告人赵龙,又名赵杰，男，汉族，1986年5月25日出生于内蒙古自治区卓资县，高中文化，无业。2007年9月29日被逮捕。现在押。\n" +
                 "内蒙古自治区乌兰察布市中级人民法院审理乌兰察布市人民检察院指控被告人赵龙犯抢劫罪、故意杀人罪一案，于2008年8月6日以（2008）乌刑初字第38号刑事判决，认定被告人赵龙犯抢劫罪，判处死刑，剥夺政治权利终身，并处没收个人全部财产。宣判后，赵龙提出上诉。内蒙古自治区高级人民法院于2009年8月28日作出（2009）内刑一终字第94号刑事裁定，以违反法律规定的诉讼程序为由，撤销原判，发回重审。乌兰察布市中级人民法院经依法重新审理，于2010年1月12日以（2009）乌刑初字第49号刑事附带民事判决，认定被告人赵龙犯抢劫罪，判处死刑，剥夺政治权利终身，并处没收个人全部财产。宣判后，赵龙提出上诉。内蒙古自治区高级人民法院于2010年7月16日作出（2010）内刑一复字第109号刑事附带民事裁定，再次以违反法律规定的诉讼程序为由，撤销原判，发回重审。乌兰察布市中级人民法院经依法重新审理，于2011年1月24日以（2010）乌刑初字第47号刑事附带民事判决，认定被告人赵龙犯抢劫罪，判处死刑，剥夺政治权利终身，并处没收个人全部财产。宣判后，赵龙提出上诉。内蒙古自治区高级人民法院经依法开庭审理，于2012年9月21日以（2011）内刑一复字第58号刑事附带民事判决，维持原审对被告人赵龙的刑事判决，并依法报请本院核准。本院依法组成合议庭，对本案进行了复核，依法讯问了被告人。现已复核终结。\n" +
                 "经复核确认：2006年12月17日，被告人赵龙向吕俊、冯晓东、巩某某（均系同案被告人，已判刑）提议抢劫，吕、冯、巩均表示同意，为此赵龙、吕俊、冯晓东各准备了一把尖刀。当晚，赵龙等人乘坐巩某某驾驶的牌号为蒙J330**的一汽佳宝牌面包车寻找抢劫目标未果，赵龙决定以购买毒品为名到被害人王某某（男，殁年27岁）、邢某甲（女，殁年26岁）夫妇家中抢劫，吕俊、冯晓东、巩某某同意。次日零时许，赵龙等人来到王某某家附近。按照赵龙的安排，巩某某在车内望风，赵龙、吕俊、冯晓东各持一把尖刀到王某某家门口。赵龙敲门谎称购买毒品，王某某开门后，赵龙持刀捅刺王的腹部，又与冯晓东一起捅刺王的头部、颈部、胸部等处多刀，其间赵、冯的手均被刀划伤。邢某甲闻声出来查看，吕俊持刀将邢按倒在里屋的床上。赵龙、冯晓东将王某某拖进里屋，见王仍有呼吸，赵龙又指使吕俊捅刺王数刀。随后，赵龙将刀架在邢某甲颈部逼问财物的存放地点，邢某甲告知后，赵龙用力切割邢某甲颈部，并与吕俊、冯晓东捅刺邢的头部、颈部等处多刀。王某某、邢某甲分别因左颈动脉、左颈静脉被刺破引起大失血死亡。赵龙、吕俊、冯晓东劫取王某某家中的现金1万元及首饰、手机、纪念币、银行卡等财物，后逃离现场。\n" +
@@ -78,9 +83,11 @@ public class EsdemoApplicationTests {
                 "\n" +
                 "二〇一三年十一月二十九日\n" +
                 "书　记　员　　张　妍");
-        doc.setReason(" ");
+        doc.setReason("故意杀人罪");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd");
         doc.setTime(sdf.parse("2013.11.23"));
+        doc.setcaseNumber("《最高人民法院公报》 1985年第1号");
+        doc.setUrl("https://www.jufaanli.com/wenshu/8396520f8bae7b56e98f3b919c8c228b/?q=%E6%9D%80%E4%BA%BA&src=search");
 
         docDao.save(doc);
 
@@ -88,7 +95,7 @@ public class EsdemoApplicationTests {
 
     @Test
     public void testAggregation(){
-        docSearchService.subAgregation();
+        docSearchService.timeAgregation();
 
     }
 }

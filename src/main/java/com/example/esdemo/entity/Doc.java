@@ -1,6 +1,7 @@
 package com.example.esdemo.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.elasticsearch.index.Index;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -8,6 +9,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.util.Date;
+import java.util.List;
 
 @Document(indexName = "doc",shards = 1,replicas = 0)
 public class Doc {
@@ -22,7 +24,10 @@ public class Doc {
     private String court;
 
     @Field(type = FieldType.Keyword)
-    private String caseType;
+    private List<String> caseType;
+
+    @Field(type = FieldType.Keyword)
+    private String caseNumber;
 
     @Field(type = FieldType.Keyword)
     private String docType;
@@ -34,13 +39,11 @@ public class Doc {
     private String content;
 
     @Field(type = FieldType.Keyword)
-    private String litigant;
+    private List<String> litigant;
 
-    @Field(type = FieldType.Keyword)
-    private String lawyer;
 
-    @Field(type = FieldType.Date, format = DateFormat.custom,pattern ="yyyy-MM-dd HH:mm:ss")
-    @JsonFormat(shape =JsonFormat.Shape.STRING,pattern ="yyyy-MM-dd HH:mm:ss",timezone ="GMT+8")
+    @Field(type = FieldType.Date, format = DateFormat.custom,pattern ="yyyy-MM-dd")
+    @JsonFormat(shape =JsonFormat.Shape.STRING,pattern ="yyyy-MM-dd",timezone ="GMT+8")
     private Date time;
 
     @Field(type = FieldType.Keyword)
@@ -52,15 +55,23 @@ public class Doc {
                 "id=" + id +
                 ", caseName='" + caseName + '\'' +
                 ", court='" + court + '\'' +
-                ", caseType='" + caseType + '\'' +
+                ", caseType=" + caseType +
+                ", caseNumber='" + caseNumber + '\'' +
                 ", docType='" + docType + '\'' +
                 ", reason='" + reason + '\'' +
                 ", content='" + content + '\'' +
-                ", litigant='" + litigant + '\'' +
-                ", lawyer='" + lawyer + '\'' +
+                ", litigant=" + litigant +
                 ", time=" + time +
                 ", url='" + url + '\'' +
                 '}';
+    }
+
+    public String getcaseNumber() {
+        return caseNumber;
+    }
+
+    public void setcaseNumber(String caseNumber) {
+        this.caseNumber = caseNumber;
     }
 
     public long getId() {
@@ -87,11 +98,11 @@ public class Doc {
         this.court = court;
     }
 
-    public String getCaseType() {
+    public List<String> getCaseType() {
         return caseType;
     }
 
-    public void setCaseType(String caseType) {
+    public void setCaseType(List<String> caseType) {
         this.caseType = caseType;
     }
 
@@ -111,20 +122,20 @@ public class Doc {
         this.reason = reason;
     }
 
-    public String getLitigant() {
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public List<String> getLitigant() {
         return litigant;
     }
 
-    public void setLitigant(String litigant) {
+    public void setLitigant(List<String> litigant) {
         this.litigant = litigant;
-    }
-
-    public String getLawyer() {
-        return lawyer;
-    }
-
-    public void setLawyer(String lawyer) {
-        this.lawyer = lawyer;
     }
 
     public Date getTime() {
@@ -142,14 +153,4 @@ public class Doc {
     public void setUrl(String url) {
         this.url = url;
     }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-
 }

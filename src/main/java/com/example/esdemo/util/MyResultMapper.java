@@ -36,17 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.*;
 
-/**
- * @author Artur Konczak
- * @author Petar Tahchiev
- * @author Young Gu
- * @author Oliver Gierke
- * @author Chris White
- * @author Mark Paluch
- * @author Ilkang Na
- * @author Sascha Woo
- * @author 王向东
- */
+
 @Component
 public class MyResultMapper extends AbstractResultMapper {
 

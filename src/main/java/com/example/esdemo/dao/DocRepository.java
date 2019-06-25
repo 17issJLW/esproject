@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface DocRepository extends ElasticsearchRepository<Doc,Long> {
     List<Doc> queryByContent(String content);
 
-    Optional<Doc> findById(long id);
+    Doc findById(long id);
 }

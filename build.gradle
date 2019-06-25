@@ -19,6 +19,7 @@ dependencies {
     compile group: 'org.elasticsearch', name: 'elasticsearch', version: '6.4.0'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
     compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.3'
+    compile group: 'com.spring4all', name: 'swagger-spring-boot-starter', version: '1.9.0.RELEASE'
     compile group: 'org.springframework.data', name: 'spring-data-elasticsearch', version: '3.1.9.RELEASE'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
