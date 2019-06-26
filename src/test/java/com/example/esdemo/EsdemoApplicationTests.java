@@ -153,7 +153,13 @@ public class EsdemoApplicationTests {
 
     @Test
     public void testAggregation(){
-        docSearchService.timeAgregation();
+        Object reason = docSearchService.agregationSearch("reason",false);
+        System.out.println(reason);
+
+    }
+
+    @Test
+    public void testRedis(){
 
     }
 }

@@ -22,6 +22,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.boot.json.GsonJsonParser;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
@@ -132,7 +133,7 @@ public class DocSearchService {
 
     public Object agregationSearchTime(String field, boolean order,String format){
         /**
-         * 搜索结果聚合查询
+         * 时间聚合查询
          */
 
         AbstractAggregationBuilder abstractAggregationBuilder = AggregationBuilders.terms(field)
@@ -165,15 +166,8 @@ public class DocSearchService {
 
         System.out.println(data);
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
 
-        SortBuilder sortBuilder = null;
-
-        if(!data.getSortBy().isEmpty()){
-            SortOrder order = SortOrder.DESC;
-            if(data.isOrder()) order = SortOrder.ASC;
-            sortBuilder = SortBuilders.fieldSort(data.getSortBy())
-                    .order(order);
-        }
 
         if(!data.getCourt().isEmpty()){
             queryBuilder.filter(matchQuery("court",data.getCourt()));
@@ -191,17 +185,49 @@ public class DocSearchService {
             queryBuilder.filter(rangeQuery("time").format("yyyy").from(data.getFromYear()).to(data.getToYear()));
         }
         if(!data.getKeyword().isEmpty()){
-            queryBuilder.filter(multiMatchQuery(data.getKeyword(),"caseName","content"));
+//            queryBuilder.filter(multiMatchQuery(data.getKeyword(),"caseName","content"));
+            queryBuilder.filter(queryStringQuery(data.getKeyword()));
         }
 
-        SearchQuery query = new NativeSearchQueryBuilder()
+
+        if(!data.getSortBy().isEmpty()){
+            SortOrder order = SortOrder.DESC;
+            if(data.isOrder()) order = SortOrder.ASC;
+            SortBuilder sortBuilder = SortBuilders.fieldSort(data.getSortBy())
+                    .order(order);
+            nativeSearchQueryBuilder.withSort(sortBuilder);
+        }
+        QueryBuilder resQuery = queryBuilder;
+
+
+        SearchQuery query = nativeSearchQueryBuilder
                 .withQuery(queryBuilder)
-//                .withQuery(QueryBuilders.queryStringQuery(data.getKeyword()))
                 .withPageable(pageable)
                 .withHighlightBuilder(highlightBuilder)
                 .withHighlightFields(highlightContent,highlightTitle)
                 .build();
 
+
         return esTemplate.queryForPage(query,Doc.class);
+    }
+
+    public Object recomendByType(String caseType,String reason,String docType,long id){
+
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
+
+        queryBuilder.filter(matchQuery("caseType",caseType))
+                .filter(matchQuery("reason",reason))
+                .filter(matchQuery("docType",docType))
+                .mustNot(matchQuery("id",id));
+
+        SearchQuery query = nativeSearchQueryBuilder
+                .withQuery(queryBuilder)
+                .withPageable(new PageRequest(0,5))
+                .build();
+
+        return esTemplate.queryForList(query,Doc.class);
+
+
     }
 }

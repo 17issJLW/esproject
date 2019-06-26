@@ -10,7 +10,7 @@ import java.util.List;
 
 public class AdvancedSearchValidation {
 
-    @NotEmpty(message = "关键词不能为空")
+
     @Length(min = 0,max = 25,message = "关键词不能大于25字")
     private String keyword;
 
