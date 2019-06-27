@@ -2,17 +2,21 @@ package com.example.esdemo.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.elasticsearch.index.Index;
+
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 @Document(indexName = "doc",shards = 1,replicas = 0)
-public class Doc {
+public class Doc{
 
     @Id
     private long id;
@@ -32,7 +36,7 @@ public class Doc {
     @Field(type = FieldType.Keyword)
     private String docType;
 
-    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String reason;
 
     @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
@@ -41,9 +45,13 @@ public class Doc {
     @Field(type = FieldType.Keyword)
     private List<String> litigant;
 
+    @Field(type = FieldType.Integer)
+    private int clickCount;
+
 
     @Field(type = FieldType.Date, format = DateFormat.custom,pattern ="yyyy-MM-dd")
     @JsonFormat(shape =JsonFormat.Shape.STRING,pattern ="yyyy-MM-dd",timezone ="GMT+8")
+    @DateTimeFormat(pattern ="yyyy-MM-dd")
     private Date time;
 
     @Field(type = FieldType.Keyword)
@@ -67,11 +75,20 @@ public class Doc {
                 ", reason='" + reason + '\'' +
                 ", content='" + content + '\'' +
                 ", litigant=" + litigant +
+                ", clickCount=" + clickCount +
                 ", time=" + time +
                 ", url='" + url + '\'' +
                 ", lawList=" + lawList +
                 ", stage=" + stage +
                 '}';
+    }
+
+    public int getClickCount() {
+        return clickCount;
+    }
+
+    public void setClickCount(int clickCount) {
+        this.clickCount = clickCount;
     }
 
     public long getId() {

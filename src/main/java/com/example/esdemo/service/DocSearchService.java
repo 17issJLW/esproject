@@ -1,6 +1,7 @@
 package com.example.esdemo.service;
 
 import com.example.esdemo.dao.DocRepository;
+import com.example.esdemo.dao.RedisUtils;
 import com.example.esdemo.entity.Doc;
 import com.example.esdemo.lib.exception.NotFound;
 import com.example.esdemo.lib.validation.AdvancedSearchValidation;
@@ -13,6 +14,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
@@ -34,7 +36,6 @@ import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -55,6 +56,9 @@ public class DocSearchService {
 
     @Autowired
     private MyResultMapper myResultMapper;
+
+    @Autowired
+    private RedisUtils redisUtils;
 
     private String highlightPreTags = "<span class='highlight' style='color:red'>";
     private String highlightPostTags = "</span>";
@@ -96,6 +100,14 @@ public class DocSearchService {
         Doc doc = docRepository.findById(id);
         if(doc == null)
             throw new NotFound();
+//redis统计点击量，并定期同步到es中
+        long docId = doc.getId();
+        String key = String.format("clickCount_%d", docId);
+        int clickCount = (int)redisUtils.incr(key,1);
+        doc.setClickCount(clickCount);
+        if(clickCount % 10 == 0){
+            docRepository.save(doc);
+        }
         return doc;
 
     }
@@ -131,13 +143,13 @@ public class DocSearchService {
 
     }
 
-    public Object agregationSearchTime(String field, boolean order,String format){
+    public Object agregationSearchTime(String field, boolean order, String format){
         /**
          * 时间聚合查询
          */
 
         AbstractAggregationBuilder abstractAggregationBuilder = AggregationBuilders.terms(field)
-                .field(field).format(format).size(10).order(BucketOrder.count(order));
+                .field(field).format(format).size(10).order( BucketOrder.key(false));
 
         SearchQuery query = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.matchAllQuery())
@@ -216,10 +228,17 @@ public class DocSearchService {
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
         NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
 
-        queryBuilder.filter(matchQuery("caseType",caseType))
-                .filter(matchQuery("reason",reason))
-                .filter(matchQuery("docType",docType))
-                .mustNot(matchQuery("id",id));
+        if(!caseType.isEmpty())
+            queryBuilder.filter(matchQuery("caseType",caseType));
+
+        if(!reason.isEmpty())
+            queryBuilder.filter(matchQuery("reason",reason));
+
+        if(!docType.isEmpty())
+            queryBuilder.filter(matchQuery("docType",docType));
+
+
+        queryBuilder.mustNot(matchQuery("id",id));
 
         SearchQuery query = nativeSearchQueryBuilder
                 .withQuery(queryBuilder)

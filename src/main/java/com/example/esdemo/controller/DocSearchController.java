@@ -15,6 +15,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class DocSearchController {
 
     @GetMapping("/doc/{id}")
     public Object openDoc(@PathVariable(value = "id") long id){
+
         Object res = docSearchService.openSingleDoc(id);
 
         return res;
@@ -48,11 +50,13 @@ public class DocSearchController {
         Object time = docSearchService.agregationSearchTime("time",false,"yyyy");
         Object caseType = docSearchService.agregationSearch("caseType",false);
         Object reason = docSearchService.agregationSearch("reason",false);
+        Object stage = docSearchService.agregationSearch("stage",false);
         Map<String,Object> res = new HashMap<>();
         res.put("docType",docType);
         res.put("time",time);
         res.put("caseType",caseType);
         res.put("reason",reason);
+        res.put("stage",stage);
         return res;
     }
 
@@ -81,7 +85,7 @@ public class DocSearchController {
 
     }
 
-    @GetMapping("doc/recommend")
+    @GetMapping("/doc/recommend")
     public Object docRecommend(@RequestParam(value = "caseType", required = false, defaultValue = "") String caseType,
                                @RequestParam(value = "reason", required = false, defaultValue = "") String reason,
                                @RequestParam(value = "docType", required = false, defaultValue = "") String docType,

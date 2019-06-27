@@ -2,12 +2,16 @@ package com.example.esdemo;
 
 import com.example.esdemo.dao.ArticleSearchRepository;
 import com.example.esdemo.dao.DocRepository;
+import com.example.esdemo.dao.RedisUtils;
 import com.example.esdemo.entity.Article;
 import com.example.esdemo.entity.Doc;
 import com.example.esdemo.service.DocSearchService;
+
+import net.minidev.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
@@ -35,6 +39,12 @@ public class EsdemoApplicationTests {
     @Autowired
     public DocSearchService docSearchService;
 
+    @Autowired
+    public RedisUtils redisUtils;
+
+    private JSONObject json = new JSONObject();
+
+
     @Test
     public void contextLoads() {
     }
@@ -45,8 +55,14 @@ public class EsdemoApplicationTests {
     }
     @Test
     public void testMapindex(){
-        elasticsearchTemplate.deleteIndex("doc");
+//        elasticsearchTemplate.putMapping(Doc.class);
+//        elasticsearchTemplate.deleteIndex("doc");
     }
+
+//    @Test
+//    public void testReindex(){
+//        elasticsearchTemplate.
+//    }
 
     @Test
     public void testSearch(){
@@ -105,7 +121,6 @@ public class EsdemoApplicationTests {
     @Test
     public void testAddDoc2() throws Exception{
         Doc doc = new Doc();
-        doc.setId(1);
         doc.setCaseName("孙明亮故意伤害二审案");
         List<String> typeList = new ArrayList<>();
         typeList.add("刑事");
@@ -160,6 +175,23 @@ public class EsdemoApplicationTests {
 
     @Test
     public void testRedis(){
+        Doc doc = new Doc();
+        doc.setCaseNumber("hh");
+        redisUtils.set("ke", doc);
+        Doc doc2 = (Doc) redisUtils.get("ke");
+        System.out.println(doc2.getCaseName());
+    }
 
+    @Test
+    public void testRedisIncr(){
+        redisUtils.set("incr",1);
+        System.out.println(redisUtils.incr("incr",1));
+    }
+
+    @Test
+    public void testData(){
+
+
+        System.out.println(new Date().getTime());
     }
 }
