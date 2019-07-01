@@ -10,36 +10,82 @@ import java.util.List;
 
 public class AdvancedSearchValidation {
 
+    @NotNull(message = "keyword not null")
+//    @Length(min = 0,max = 25,message = "关键词不能大于25字")
+    private List<String> keyword;
 
-    @Length(min = 0,max = 25,message = "关键词不能大于25字")
-    private String keyword;
-
+    @NotNull(message = "docType not null")
     @Length(min = 0,max = 10,message = "文件类别不能大于10字")
     private String docType;
 
+    @NotNull(message = "reason not null")
     @Length(min = 0,max = 15,message = "案由不能大于15字")
     private String reason;
 
-
+    @NotNull(message = "fromYear not null")
     private int fromYear;
 
+    @NotNull(message = "toYear not null")
     private int toYear;
 
+    @NotNull(message = "stage not null")
     @Length(min = 0,max = 10,message = "审理状态不能大于10字")
     private String stage;
 
+    @NotNull(message = "court not null")
     @Length(min = 0,max = 15,message = "法院不能大于15字")
     private String court;
 
+    @NotNull(message = "sortBy not null")
     private String sortBy;
 
+    @NotNull(message = "order not null")
     private boolean order;
 
-    public String getKeyword() {
+    @NotNull(message = "law not null")
+    private String law;
+
+    @NotNull(message = "location not null")
+    private String location;
+
+    @Override
+    public String toString() {
+        return "AdvancedSearchValidation{" +
+                "keyword=" + keyword +
+                ", docType='" + docType + '\'' +
+                ", reason='" + reason + '\'' +
+                ", fromYear=" + fromYear +
+                ", toYear=" + toYear +
+                ", stage='" + stage + '\'' +
+                ", court='" + court + '\'' +
+                ", sortBy='" + sortBy + '\'' +
+                ", order=" + order +
+                ", law='" + law + '\'' +
+                ", location='" + location + '\'' +
+                '}';
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getLaw() {
+        return law;
+    }
+
+    public void setLaw(String law) {
+        this.law = law;
+    }
+
+    public List<String> getKeyword() {
         return keyword;
     }
 
-    public void setKeyword(String keyword) {
+    public void setKeyword(List<String> keyword) {
         this.keyword = keyword;
     }
 
@@ -90,21 +136,6 @@ public class AdvancedSearchValidation {
 
     public void setOrder(boolean order) {
         this.order = order;
-    }
-
-    @Override
-    public String toString() {
-        return "AdvancedSearchValidation{" +
-                "keyword='" + keyword + '\'' +
-                ", docType='" + docType + '\'' +
-                ", reason='" + reason + '\'' +
-                ", fromYear=" + fromYear +
-                ", toYear=" + toYear +
-                ", stage='" + stage + '\'' +
-                ", court='" + court + '\'' +
-                ", sortBy='" + sortBy + '\'' +
-                ", order=" + order +
-                '}';
     }
 
     public int getFromYear() {

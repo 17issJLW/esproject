@@ -10,19 +10,20 @@ import com.google.gson.Gson;
 import org.apache.lucene.index.Terms;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
+import org.elasticsearch.search.aggregations.pipeline.PipelineAggregatorBuilders;
+import org.elasticsearch.search.aggregations.pipeline.bucketselector.BucketSelectorPipelineAggregationBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,19 +35,15 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.data.elasticsearch.core.query.ScriptField;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
-import javax.validation.Valid;
-import java.sql.SQLOutput;
 import java.util.*;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
 
 @Service
 public class DocSearchService {
+
 
     @Autowired
     private ElasticsearchTemplate esTemplate;
@@ -78,13 +75,19 @@ public class DocSearchService {
 
 
 
-    public Object simpleSearch(String keyword, Pageable pageable){
+    public Object simpleSearch(List<String> keyword, Pageable pageable){
         /**
          * 简单全文搜索
          */
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        for(String key:keyword){
+            queryBuilder.filter(queryStringQuery(key));
+        }
+//        Script script = new Script("doc['reason'].value.length()");
+//        ScriptField scriptField = new ScriptField("size",script);
 
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
-                .withQuery(queryStringQuery(keyword))
+                .withQuery(queryBuilder)
                 .withPageable(pageable)
                 .withHighlightBuilder(highlightBuilder)
                 .withHighlightFields(highlightContent,highlightTitle)
@@ -101,9 +104,11 @@ public class DocSearchService {
         if(doc == null)
             throw new NotFound();
 //redis统计点击量，并定期同步到es中
+
         long docId = doc.getId();
-        String key = String.format("clickCount_%d", docId);
+        String key = String.format(RedisUtils.docClickCount, docId);
         int clickCount = (int)redisUtils.incr(key,1);
+
         doc.setClickCount(clickCount);
         if(clickCount % 10 == 0){
             docRepository.save(doc);
@@ -147,15 +152,26 @@ public class DocSearchService {
         /**
          * 时间聚合查询
          */
+        DateHistogramAggregationBuilder abstractAggregationBuilder = AggregationBuilders.dateHistogram(field)
+                .field(field).dateHistogramInterval(DateHistogramInterval.YEAR).format(format).order(BucketOrder.key(order));
 
-        AbstractAggregationBuilder abstractAggregationBuilder = AggregationBuilders.terms(field)
-                .field(field).format(format).size(10).order( BucketOrder.key(false));
+        Map<String, String> bucketsPathsMap = new HashMap<>(8);
+        bucketsPathsMap.put("count", "_count");
+        Script script = new Script("params.count > 0");
+
+        BucketSelectorPipelineAggregationBuilder bs =
+                PipelineAggregatorBuilders.bucketSelector("having", bucketsPathsMap, script);
+
+        abstractAggregationBuilder.subAggregation(bs);
+//        AbstractAggregationBuilder abstractAggregationBuilder = AggregationBuilders.terms(field)
+//                .field(field).format(format).size(10).order(BucketOrder.key(false));
 
         SearchQuery query = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.matchAllQuery())
                 .withSearchType(SearchType.QUERY_THEN_FETCH)
                 .addAggregation(abstractAggregationBuilder)
                 .build();
+
 
         Aggregations aggregations = esTemplate.query(query, new ResultsExtractor<Aggregations>() {
             @Override
@@ -173,34 +189,58 @@ public class DocSearchService {
 
     }
 
-
-    public Object AdvantureSearch(AdvancedSearchValidation data,Pageable pageable){
-
-        System.out.println(data);
+    /**
+     * 根据复杂搜索构造BoolQueryBuilder
+     * @param data
+     * @return
+     */
+    public BoolQueryBuilder buildBoolQueryBuilder(AdvancedSearchValidation data){
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
+//        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
 
-
-        if(!data.getCourt().isEmpty()){
+        if(!data.getCourt().isBlank()){
             queryBuilder.filter(matchQuery("court",data.getCourt()));
         }
-        if(!data.getDocType().isEmpty()){
+        if(!data.getDocType().isBlank()){
             queryBuilder.filter(matchQuery("docType",data.getDocType()));
         }
-        if(!data.getReason().isEmpty()){
+        if(!data.getReason().isBlank()){
             queryBuilder.filter(matchQuery("reason",data.getReason()));
         }
-        if(!data.getStage().isEmpty()){
+        if(!data.getStage().isBlank()){
             queryBuilder.filter(matchQuery("stage",data.getStage()));
         }
         if((data.getFromYear() != 0) &&  (data.getToYear() != 0) ){
             queryBuilder.filter(rangeQuery("time").format("yyyy").from(data.getFromYear()).to(data.getToYear()));
         }
         if(!data.getKeyword().isEmpty()){
-//            queryBuilder.filter(multiMatchQuery(data.getKeyword(),"caseName","content"));
-            queryBuilder.filter(queryStringQuery(data.getKeyword()));
+            for(String key:data.getKeyword()){
+                if(!key.isBlank()){
+                    queryBuilder.filter(queryStringQuery(key));
+                }
+            }
+        }
+        if(data.getLaw() != null && !data.getLaw().isBlank()){
+            queryBuilder.filter(matchPhraseQuery("lawList",data.getLaw()));
+        }
+        if(data.getLocation() != null && !data.getLocation().isBlank()){
+            queryBuilder.filter(matchQuery("location",data.getLocation()));
         }
 
+        return queryBuilder;
+    }
+
+    /**
+     * 高级搜索
+     * @param data
+     * @param pageable
+     * @return
+     */
+    public Object AdvantureSearch(AdvancedSearchValidation data,Pageable pageable){
+
+        BoolQueryBuilder queryBuilder = buildBoolQueryBuilder(data);
+
+        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
 
         if(!data.getSortBy().isEmpty()){
             SortOrder order = SortOrder.DESC;
@@ -209,7 +249,6 @@ public class DocSearchService {
                     .order(order);
             nativeSearchQueryBuilder.withSort(sortBuilder);
         }
-        QueryBuilder resQuery = queryBuilder;
 
 
         SearchQuery query = nativeSearchQueryBuilder
@@ -220,9 +259,17 @@ public class DocSearchService {
                 .build();
 
 
-        return esTemplate.queryForPage(query,Doc.class);
+        return esTemplate.queryForPage(query,Doc.class,myResultMapper);
     }
 
+    /**
+     * 根据文书推荐
+     * @param caseType
+     * @param reason
+     * @param docType
+     * @param id
+     * @return
+     */
     public Object recomendByType(String caseType,String reason,String docType,long id){
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
@@ -237,7 +284,6 @@ public class DocSearchService {
         if(!docType.isEmpty())
             queryBuilder.filter(matchQuery("docType",docType));
 
-
         queryBuilder.mustNot(matchQuery("id",id));
 
         SearchQuery query = nativeSearchQueryBuilder
@@ -245,8 +291,92 @@ public class DocSearchService {
                 .withPageable(new PageRequest(0,5))
                 .build();
 
+        List<Doc> listDoc = (List<Doc>)esTemplate.queryForList(query,Doc.class);
+        listDoc.forEach(doc -> {
+            int clickCount = (int)redisUtils.get(String.format(RedisUtils.docClickCount,doc.getId()));
+            doc.setClickCount(clickCount);
+        });
+
+        return listDoc;
+
+    }
+
+    public Object recomendByLike(long id){
+
+        Doc doc = docRepository.findById(id);
+        MoreLikeThisQueryBuilder moreLikeThisQueryBuilder = QueryBuilders
+                .moreLikeThisQuery(new String[] {doc.getReason()});
+        SearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(moreLikeThisQueryBuilder)
+                .build();
+
         return esTemplate.queryForList(query,Doc.class);
 
+
+    }
+
+
+    /**
+     * 搜索结果聚合
+     * @param data
+     * @param mapList
+     * @return
+     */
+    public Object searchResultAnalyse(AdvancedSearchValidation data,
+                                      List<Map<String,String>> mapList){
+        List<AbstractAggregationBuilder> aabList = new ArrayList<>();
+        BoolQueryBuilder queryBuilder = buildBoolQueryBuilder(data);
+        mapList.forEach(map -> {
+            System.out.println(map.get("key"));
+            AbstractAggregationBuilder abstractAggregationBuilder = AggregationBuilders.terms(map.get("key"))
+                    .field(map.get("key")).size(8).order(BucketOrder.count(map.get("order").equals("true")));
+            aabList.add(abstractAggregationBuilder);
+        });
+
+
+        DateHistogramAggregationBuilder abstractAggregationBuilder = AggregationBuilders.dateHistogram("year")
+                .field("time").dateHistogramInterval(DateHistogramInterval.YEAR).format("yyyy").order(BucketOrder.key(false));
+
+        Map<String, String> bucketsPathsMap = new HashMap<>(8);
+        bucketsPathsMap.put("count", "_count");
+        Script script = new Script("params.count > 0");
+
+        BucketSelectorPipelineAggregationBuilder bs =
+                PipelineAggregatorBuilders.bucketSelector("having", bucketsPathsMap, script);
+
+        abstractAggregationBuilder.subAggregation(bs);
+
+
+        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
+        nativeSearchQueryBuilder.withQuery(queryBuilder);
+        aabList.forEach(aab->{
+            nativeSearchQueryBuilder.addAggregation(aab);
+        });
+        nativeSearchQueryBuilder.addAggregation(abstractAggregationBuilder);
+
+        SearchQuery query = nativeSearchQueryBuilder.build();
+        Aggregations aggregations = esTemplate.query(query, new ResultsExtractor<Aggregations>() {
+            @Override
+            public Aggregations extract(SearchResponse response) {
+                return response.getAggregations();
+            }
+        });
+
+        Map<String, Aggregation> aggregationMap = aggregations.asMap();
+        List<Object> resList = new ArrayList<>();
+        Gson gson = new Gson();
+        mapList.forEach(map -> {
+            StringTerms stringTerms = (StringTerms) aggregationMap.get(map.get("key"));
+            System.out.println(stringTerms);
+//            List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
+            Object ob = gson.fromJson(stringTerms.toString(),Object.class);
+            resList.add(ob);
+
+        });
+
+        Object ob = gson.fromJson(aggregationMap.get("year").toString(), Object.class);
+        resList.add(ob);
+        return resList;
 
     }
 }

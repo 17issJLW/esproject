@@ -1,6 +1,8 @@
 package com.example.esdemo.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.elasticsearch.index.Index;
 
 
@@ -21,10 +23,12 @@ public class Doc{
     @Id
     private long id;
 
-    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+    @Field(index=true,analyzer="ik_max_word",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
     private String caseName;
 
-    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+
+//    @Field(index=true,type = FieldType.Keyword)
+    @Field(index=true,type = FieldType.Keyword)
     private String court;
 
     @Field(type = FieldType.Keyword)
@@ -39,7 +43,8 @@ public class Doc{
     @Field(type = FieldType.Keyword)
     private String reason;
 
-    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+
+    @Field(index=true,analyzer="ik_max_word",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
     private String content;
 
     @Field(type = FieldType.Keyword)
@@ -57,8 +62,20 @@ public class Doc{
     @Field(type = FieldType.Keyword)
     private String url;
 
-    @Field(index=true,analyzer="ik_smart",store=true,searchAnalyzer="ik_smart",type = FieldType.Text)
+    @Field(index=true,type = FieldType.Keyword)
     private List<String> lawList;
+
+    @Field(index = true,type = FieldType.Keyword)
+    private List<String> lawNameList;
+
+    @Field(index = true,type = FieldType.Keyword)
+    private String location;
+
+    @Field(type = FieldType.Integer)
+    private int contentSize;
+
+    @Field(type = FieldType.Integer)
+    private int weight;
 
     @Field(type = FieldType.Keyword)
     private List<String> stage;
@@ -79,8 +96,44 @@ public class Doc{
                 ", time=" + time +
                 ", url='" + url + '\'' +
                 ", lawList=" + lawList +
+                ", lawNameList=" + lawNameList +
+                ", location='" + location + '\'' +
+                ", contentSize=" + contentSize +
+                ", weight=" + weight +
                 ", stage=" + stage +
                 '}';
+    }
+
+    public List<String> getLawNameList() {
+        return lawNameList;
+    }
+
+    public void setLawNameList(List<String> lawNameList) {
+        this.lawNameList = lawNameList;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public int getContentSize() {
+        return contentSize;
+    }
+
+    public void setContentSize(int contentSize) {
+        this.contentSize = contentSize;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 
     public int getClickCount() {

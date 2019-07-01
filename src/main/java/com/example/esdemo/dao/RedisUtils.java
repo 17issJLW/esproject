@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisUtils {
 
+    public static String docClickCount = "clickCount_%d";
+
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -67,7 +69,7 @@ public class RedisUtils {
      * @return
      */
     public Object get(final String key) {
-        Object result = null;
+        Object result = "";
         ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
         result = operations.get(key);
         return result;

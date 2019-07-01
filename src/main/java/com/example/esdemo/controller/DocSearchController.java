@@ -1,5 +1,6 @@
 package com.example.esdemo.controller;
 
+import com.example.esdemo.entity.Doc;
 import com.example.esdemo.lib.exception.NotFound;
 import com.example.esdemo.lib.validation.AdvancedSearchValidation;
 import com.example.esdemo.service.DocSearchService;
@@ -28,8 +29,8 @@ public class DocSearchController {
     DocSearchService docSearchService;
 
     @GetMapping("/doc")
-    public Object simpleSearch(@RequestParam(value = "keyword",defaultValue = "") String keyword,
-                               @PageableDefault(page = 0, size = 20) Pageable pageable){
+    public Object simpleSearch(@RequestParam(value = "keyword",defaultValue = "") List<String> keyword,
+                               @PageableDefault(page = 0, size = 10) Pageable pageable){
         Object res = docSearchService.simpleSearch(keyword, pageable);
 
         return res;
@@ -51,12 +52,16 @@ public class DocSearchController {
         Object caseType = docSearchService.agregationSearch("caseType",false);
         Object reason = docSearchService.agregationSearch("reason",false);
         Object stage = docSearchService.agregationSearch("stage",false);
+        Object location = docSearchService.agregationSearch("location",false);
+        Object lawNameList = docSearchService.agregationSearch("lawNameList",false);
         Map<String,Object> res = new HashMap<>();
         res.put("docType",docType);
         res.put("time",time);
         res.put("caseType",caseType);
         res.put("reason",reason);
         res.put("stage",stage);
+        res.put("location",location);
+        res.put("lawNameList",lawNameList);
         return res;
     }
 
@@ -70,7 +75,7 @@ public class DocSearchController {
     @PostMapping("/doc")
     public Object advancedSearch(@RequestBody @Valid AdvancedSearchValidation advancedSearchValidation,
                                  BindingResult bindingResult,
-                                 @PageableDefault(page = 0, size = 20) Pageable pageable){
+                                 @PageableDefault(page = 0, size = 10) Pageable pageable){
 
         if(bindingResult.hasErrors()){
             for(ObjectError error : bindingResult.getAllErrors()){
@@ -85,6 +90,55 @@ public class DocSearchController {
 
     }
 
+    @PostMapping("/doc/result")
+    public Object searchResultAnalse(@RequestBody @Valid AdvancedSearchValidation advancedSearchValidation,
+                                     BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            for(ObjectError error : bindingResult.getAllErrors()){
+                Map<String,Object> res = new HashMap<>();
+                res.put("message", error.getDefaultMessage());
+                return new ResponseEntity<Map<String,Object>>(res, HttpStatus.BAD_REQUEST);
+            }
+        }
+        List<Map<String,String>> mapList = new ArrayList<>();
+        Map<String,String> docType = new HashMap<>();
+        docType.put("key","docType");
+        docType.put("order","false");
+
+        Map<String,String> caseType = new HashMap<>();
+        caseType.put("key","caseType");
+        caseType.put("order","false");
+
+        Map<String,String> reason = new HashMap<>();
+        reason.put("key","reason");
+        reason.put("order","false");
+
+        Map<String,String> stage = new HashMap<>();
+        stage.put("key","stage");
+        stage.put("order","false");
+
+        Map<String,String> lawNameList = new HashMap<>();
+        lawNameList.put("key","lawNameList");
+        lawNameList.put("order","false");
+
+        Map<String,String> location = new HashMap<>();
+        location.put("key","location");
+        location.put("order","false");
+
+        mapList.add(docType);
+        mapList.add(caseType);
+        mapList.add(reason);
+        mapList.add(stage);
+        mapList.add(lawNameList);
+        mapList.add(location);
+
+        Object res = docSearchService.searchResultAnalyse(advancedSearchValidation,mapList);
+
+//        Object time = docSearchService.agregationSearchTime("time",false,"yyyy");
+        return res;
+
+    }
+
     @GetMapping("/doc/recommend")
     public Object docRecommend(@RequestParam(value = "caseType", required = false, defaultValue = "") String caseType,
                                @RequestParam(value = "reason", required = false, defaultValue = "") String reason,
@@ -92,7 +146,6 @@ public class DocSearchController {
                                @RequestParam(value = "id") long id){
 
         Object res = docSearchService.recomendByType(caseType,reason,docType,id);
-
         return res;
 
 
