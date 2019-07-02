@@ -2,6 +2,7 @@ package com.example.esdemo.dao;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +14,15 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtils {
 
     public static String docClickCount = "clickCount_%d";
+    public static String history = "history_%s_%s";
+    public static long week = 648000;
 
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate template;
 
     /**
      * 批量删除对应的value
@@ -73,6 +79,16 @@ public class RedisUtils {
         ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
         result = operations.get(key);
         return result;
+    }
+
+    /**
+     * 根据前缀获取key
+     * @param prefix
+     * @return
+     */
+    public Set<String> getKeyByPrefix(final String prefix){
+        Set<String> keys = template.keys(prefix);
+        return keys;
     }
 
     /**

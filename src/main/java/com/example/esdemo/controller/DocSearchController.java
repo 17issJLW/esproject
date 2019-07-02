@@ -1,5 +1,6 @@
 package com.example.esdemo.controller;
 
+import com.example.esdemo.dao.RedisUtils;
 import com.example.esdemo.entity.Doc;
 import com.example.esdemo.lib.exception.NotFound;
 import com.example.esdemo.lib.validation.AdvancedSearchValidation;
@@ -15,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
@@ -24,6 +26,9 @@ import java.util.Map;
 
 @RestController
 public class DocSearchController {
+
+    @Autowired
+    HttpServletRequest request;
 
     @Autowired
     DocSearchService docSearchService;
@@ -40,7 +45,11 @@ public class DocSearchController {
     @GetMapping("/doc/{id}")
     public Object openDoc(@PathVariable(value = "id") long id){
 
-        Object res = docSearchService.openSingleDoc(id);
+        String fingerprint = "";
+        if(request.getHeader("Token") != null){
+            fingerprint = request.getHeader("Token");
+        }
+        Object res = docSearchService.openSingleDoc(id,fingerprint);
 
         return res;
     }

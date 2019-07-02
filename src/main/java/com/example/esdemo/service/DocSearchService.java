@@ -37,6 +37,7 @@ import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
 
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -96,7 +97,7 @@ public class DocSearchService {
         return esTemplate.queryForPage(searchQuery, Doc.class, myResultMapper);
     }
 
-    public Object openSingleDoc(long id){
+    public Object openSingleDoc(long id,String fingerprint){
         /**
          * 打开单一文档
          */
@@ -108,8 +109,14 @@ public class DocSearchService {
         long docId = doc.getId();
         String key = String.format(RedisUtils.docClickCount, docId);
         int clickCount = (int)redisUtils.incr(key,1);
-
         doc.setClickCount(clickCount);
+
+//        记录浏览器指纹和访问文档id
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String dateStr = sdf.format(new Date());
+        redisUtils.set(String.format(RedisUtils.history,fingerprint,dateStr),doc.getId());
+
+
         if(clickCount % 10 == 0){
             docRepository.save(doc);
         }
@@ -144,7 +151,7 @@ public class DocSearchService {
         Gson gson = new Gson();
         Map<String,Object> map = new HashMap<>();
         map = gson.fromJson(aggregationMap.get(field).toString(),map.getClass());
-        return map ;
+        return map;
 
     }
 
@@ -221,7 +228,7 @@ public class DocSearchService {
             }
         }
         if(data.getLaw() != null && !data.getLaw().isBlank()){
-            queryBuilder.filter(matchPhraseQuery("lawList",data.getLaw()));
+            queryBuilder.filter(fuzzyQuery("lawList",data.getLaw()));
         }
         if(data.getLocation() != null && !data.getLocation().isBlank()){
             queryBuilder.filter(matchQuery("location",data.getLocation()));
@@ -293,7 +300,9 @@ public class DocSearchService {
 
         List<Doc> listDoc = (List<Doc>)esTemplate.queryForList(query,Doc.class);
         listDoc.forEach(doc -> {
-            int clickCount = (int)redisUtils.get(String.format(RedisUtils.docClickCount,doc.getId()));
+            Object o = redisUtils.get(String.format(RedisUtils.docClickCount,doc.getId()));
+            int clickCount = 0;
+            if(o != null) clickCount = (int)redisUtils.get(String.format(RedisUtils.docClickCount,doc.getId()));
             doc.setClickCount(clickCount);
         });
 
