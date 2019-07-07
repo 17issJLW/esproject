@@ -13,10 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(SpringRunner.class)
@@ -50,5 +47,11 @@ public class RecommendTest {
         Pageable pageable = new PageRequest(0,5,sort);
         Page<Doc> list = docRepository.findAll(pageable);
         System.out.println(list);
+    }
+
+    @Test
+    public void testUUID(){
+        String uuid = UUID.randomUUID().toString();
+        System.out.println(uuid);
     }
 }

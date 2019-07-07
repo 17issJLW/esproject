@@ -54,6 +54,8 @@ public class DocManageController {
         return doc;
     }
 
+
+
     @PutMapping("/doc/manage/{id}")
     public Object updateDoc(@PathVariable(name = "id") long id,
                             @RequestBody @Valid Doc doc,

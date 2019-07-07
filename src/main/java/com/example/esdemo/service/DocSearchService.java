@@ -101,21 +101,26 @@ public class DocSearchService {
         /**
          * 打开单一文档
          */
+        System.out.println("start");
         Doc doc = docRepository.findById(id);
         if(doc == null)
             throw new NotFound();
 //redis统计点击量，并定期同步到es中
+        System.out.println(doc.getId());
 
         long docId = doc.getId();
         String key = String.format(RedisUtils.docClickCount, docId);
         int clickCount = (int)redisUtils.incr(key,1);
         doc.setClickCount(clickCount);
 
-//        记录浏览器指纹和访问文档id
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String dateStr = sdf.format(new Date());
-        redisUtils.set(String.format(RedisUtils.history,fingerprint,dateStr),doc.getId());
+        System.out.println(String.format("id:%d,%d",doc.getId(),clickCount));
 
+//        记录浏览器指纹和访问文档id
+        if(!fingerprint.isEmpty()){
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            String dateStr = sdf.format(new Date());
+            redisUtils.set(String.format(RedisUtils.history,fingerprint,dateStr),doc.getId());
+        }
 
         if(clickCount % 10 == 0){
             docRepository.save(doc);
@@ -206,32 +211,35 @@ public class DocSearchService {
 //        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
 
         if(!data.getCourt().isBlank()){
-            queryBuilder.filter(matchQuery("court",data.getCourt()));
+            queryBuilder.must(matchQuery("court",data.getCourt()));
         }
         if(!data.getDocType().isBlank()){
-            queryBuilder.filter(matchQuery("docType",data.getDocType()));
+            queryBuilder.must(termQuery("docType",data.getDocType()));
         }
         if(!data.getReason().isBlank()){
-            queryBuilder.filter(matchQuery("reason",data.getReason()));
+            queryBuilder.must(matchQuery("reason",data.getReason()));
         }
         if(!data.getStage().isBlank()){
-            queryBuilder.filter(matchQuery("stage",data.getStage()));
+            queryBuilder.must(termQuery("stage",data.getStage()));
         }
         if((data.getFromYear() != 0) &&  (data.getToYear() != 0) ){
-            queryBuilder.filter(rangeQuery("time").format("yyyy").from(data.getFromYear()).to(data.getToYear()));
+            queryBuilder.must(rangeQuery("time").format("yyyy").from(data.getFromYear()).to(data.getToYear()));
         }
         if(!data.getKeyword().isEmpty()){
             for(String key:data.getKeyword()){
                 if(!key.isBlank()){
-                    queryBuilder.filter(queryStringQuery(key));
+//                    queryBuilder.must(queryStringQuery(key).boost(2f));
+                    queryBuilder.must(multiMatchQuery(key,"content","caseName")
+                            .type(MultiMatchQueryBuilder.Type.BEST_FIELDS)
+                            .tieBreaker(0.1f));
                 }
             }
         }
         if(data.getLaw() != null && !data.getLaw().isBlank()){
-            queryBuilder.filter(fuzzyQuery("lawList",data.getLaw()));
+            queryBuilder.must(fuzzyQuery("lawList",data.getLaw()));
         }
         if(data.getLocation() != null && !data.getLocation().isBlank()){
-            queryBuilder.filter(matchQuery("location",data.getLocation()));
+            queryBuilder.must(termQuery("location",data.getLocation()));
         }
 
         return queryBuilder;

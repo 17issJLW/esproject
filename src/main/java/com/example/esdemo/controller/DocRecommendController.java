@@ -30,7 +30,7 @@ public class DocRecommendController {
         return docList;
     }
 
-    @GetMapping("/doc/recommend")
+    @GetMapping("/doc/recommend/user")
     public Page<Doc> recommendByUser(@PageableDefault(size = 10,page = 0) Pageable pageable){
         String fingerprint = request.getHeader("Token");
         Page<Doc> page = docRecommendService.recommendByUser(fingerprint,pageable);

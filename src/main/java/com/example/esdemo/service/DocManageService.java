@@ -2,8 +2,13 @@ package com.example.esdemo.service;
 
 import com.example.esdemo.dao.DocRepository;
 import com.example.esdemo.entity.Doc;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
 
 
@@ -21,6 +26,7 @@ public class DocManageService {
         docRepository.save(doc);
         return true;
     }
+
 
     public Doc findDoc(long id){
 
